@@ -1,9 +1,10 @@
 import psycopg2
 from config import user
 from config import senha
+from config import name
 
 # Parâmetros de conexão com o banco de dados PostgreSQL
-dbname = 'MAT_Analytics'
+dbname = name
 user = user
 password = senha
 host = 'localhost'
