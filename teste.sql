@@ -21,14 +21,14 @@ CREATE TABLE Feature
 CREATE TABLE EngineeredFeature 
 ( 
  value VARCHAR,  
- idFeature SERIAL,
+ idFeature INT,
  PRIMARY KEY (idFeature)
 );
 
 CREATE TABLE GenarationMethod 
 ( 
  method VARCHAR,  
- idFeature SERIAL
+ idFeature INT
 );
 
 CREATE TABLE Attribute 
@@ -39,16 +39,17 @@ CREATE TABLE Attribute
 
 CREATE TABLE BaseFeature 
 ( 
- idFeature SERIAL,  
- idAttribute SERIAL,
+ idFeature INT,  
+ idAttribute INT,
+ --PRIMARY KEY (idFeature, idAttribute)
  PRIMARY KEY (idFeature, idAttribute)
 );
 
 CREATE TABLE hasAttribute 
 ( 
  value VARCHAR,  
- idAspect SERIAL,  
- idAttribute SERIAL
+ idAspect INT,  
+ idAttribute INT
 );
 
 CREATE TABLE ClusteringSchema 
@@ -56,14 +57,14 @@ CREATE TABLE ClusteringSchema
  ID SERIAL PRIMARY KEY,  
  method VARCHAR,  
  description VARCHAR,  
- idMetric SERIAL,  
+ idMetric INT,  
  value VARCHAR  
 );
 
 CREATE TABLE HasFeatureClustering 
 ( 
- idClusteringSchema SERIAL,  
- idFeature SERIAL
+ idClusteringSchema INT,  
+ idFeature INT
 ); 
 
 CREATE TABLE Parameter 
@@ -89,8 +90,8 @@ CREATE TABLE MovingEntity
 
 CREATE TABLE HasParameterClustering 
 ( 
- idClusteringSchema SERIAL,  
- idParameter SERIAL 
+ idClusteringSchema INT,  
+ idParameter INT 
 ); 
 
 CREATE TABLE Cluster 
@@ -100,35 +101,55 @@ CREATE TABLE Cluster
  timestamp VARCHAR,  
  value VARCHAR,  
  Type VARCHAR,  --Type (MO - Point - MAT) VARCHAR,  
- idClusteringSchema SERIAL
+ idClusteringSchema INT
 ); 
 
 CREATE TABLE HasPoint 
 ( 
- idCluster SERIAL,  
- idPoint SERIAL 
+ idCluster INT,  
+ idPoint INT 
 ); 
 
 CREATE TABLE HasMO 
 ( 
- idCluster SERIAL,  
- idTable SERIAL
+ idCluster INT,  
+ idTable INT
 ); 
 
 CREATE TABLE HasMAT 
 ( 
- idCluster SERIAL,  
- idTable SERIAL
+ idCluster INT,  
+ idTable INT
 );
 
--- ----------------------------------------- a partir daqui há uma dependência circular da ordem de inserção ------------------------------------------------
-
-
-CREATE TABLE HasParameterClassification 
+-- ----------------------------------------- DEPENDÊNCIA CIRCULAR ------------------------------------------------
+CREATE TABLE Dataset -- Inserir FKs como NULL para liberar dependência circular
 ( 
- idParameter SERIAL,  
- idClassificationSchema SERIAL,  --idClassification Schema (Model) INT,
- PRIMARY KEY (idParameter, idClassificationSchema) -- arrumar os outros com base nessa
+ ID SERIAL PRIMARY KEY,  
+ idTrainingSet INT,  
+ idTestSet INT  
+); 
+
+CREATE TABLE TrainingSet 
+( 
+ ID SERIAL PRIMARY KEY,  
+ description VARCHAR,  
+ name VARCHAR,  --name (Data Split) VARCHAR, 
+ idDataset INT 
+);
+
+CREATE TABLE hasInstanceClassValue 
+( 
+ ID SERIAL PRIMARY KEY,
+ idTrainingSet INT,  
+ idMovingEntity INT,
+ UNIQUE(idTrainingSet, idMovingEntity)
+);
+
+CREATE TABLE ClassValue 
+( 
+ value VARCHAR,  
+ idHasInstanceClassValue INT  
 ); 
 
 CREATE TABLE ClassificationSchema --CREATE TABLE Classification Schema (Model) 
@@ -139,99 +160,78 @@ CREATE TABLE ClassificationSchema --CREATE TABLE Classification Schema (Model)
  method VARCHAR,  
  evaluationMethod VARCHAR,  
  descriptionModel VARCHAR,  
- idTrainingSet SERIAL
+ idTrainingSet INT
 ); 
 
-CREATE TABLE HasMetricClassificationSchema 
+CREATE TABLE HasParameterClassification 
 ( 
- idMetric SERIAL,  
- idClassificationSchema SERIAL, --idClassification Schema (Model) INT,  
- Value VARCHAR
-); 
-
-CREATE TABLE HasMetricAppliedOn
-( 
- Value VARCHAR,  
- idMetric SERIAL,  
- idAppliedOn SERIAL
-); 
-
-CREATE TABLE Considers 
-( 
- idAttribute SERIAL,  
- idFeature SERIAL  
+ idParameter INT,  
+ idClassificationSchema INT,  --idClassification Schema (Model) INT,
+ PRIMARY KEY (idParameter, idClassificationSchema) -- arrumar os outros com base nessa
 ); 
 
 CREATE TABLE HasFeatureClassification 
 ( 
- idClassificationSchema SERIAL,  --idClassification Schema (Model) INT, 
- idFeature SERIAL
-); 
-
-CREATE TABLE AppliedOn 
-( 
- ID SERIAL PRIMARY KEY,  
- idTestSet SERIAL,  
- idClassificationModel SERIAL,
- UNIQUE(idTestSet, idClassificationModel)
-); 
-
-CREATE TABLE TestSet 
-( 
- ID SERIAL PRIMARY KEY,  
- description VARCHAR,  
- idAppliedOn SERIAL,  
- Name VARCHAR,  --Name (Data Split) VARCHAR,  
- idDataset SERIAL  
-); 
+ idClassificationSchema INT,  --idClassification Schema (Model) INT, 
+ idFeature INT
+);
 
 CREATE TABLE ClassificationModel 
 ( 
  ID SERIAL PRIMARY KEY,  
  description VARCHAR,  
- idClassificationSchema SERIAL NOT NULL UNIQUE  --idClassification Schema (Model) INT NOT NULL UNIQUE, 
-); 
+ idClassificationSchema INT NOT NULL UNIQUE  --idClassification Schema (Model) INT NOT NULL UNIQUE, 
+);
 
 CREATE TABLE Classifies 
 ( 
  label VARCHAR,  
- idClassificationModel SERIAL,  
- idMovingEntity SERIAL
+ idClassificationModel INT,  
+ idMovingEntity INT
 ); 
 
-CREATE TABLE Dataset 
+CREATE TABLE HasMetricClassificationSchema 
+( 
+ idMetric INT,  
+ idClassificationSchema INT, --idClassification Schema (Model) INT,  
+ Value VARCHAR
+); 
+
+CREATE TABLE Considers 
+( 
+ idAttribute INT,  
+ idFeature INT  
+); 
+
+-- Inserir FKs como NULL para liberar dependência circular
+CREATE TABLE AppliedOn 
 ( 
  ID SERIAL PRIMARY KEY,  
- idTrainingSet SERIAL,  
- idTestSet SERIAL  
+ idTestSet INT,  
+ idClassificationModel INT,
+ UNIQUE(idTestSet, idClassificationModel)
 ); 
 
-CREATE TABLE TrainingSet 
+CREATE TABLE HasMetricAppliedOn
+( 
+ Value VARCHAR,  
+ idMetric INT, 
+ idAppliedOn INT
+);
+
+CREATE TABLE TestSet 
 ( 
  ID SERIAL PRIMARY KEY,  
  description VARCHAR,  
- name VARCHAR,  --name (Data Split) VARCHAR, 
- idDataset SERIAL 
+ idAppliedOn INT,  
+ Name VARCHAR,  --Name (Data Split) VARCHAR,  
+ idDataset INT  
 ); 
 
 CREATE TABLE hasInstanceMoving 
 ( 
- idTestSet SERIAL,  
- idMovingEntity SERIAL  
-); 
-
-CREATE TABLE hasInstanceClassValue 
-( 
- idHasInstanceClassValue SERIAL PRIMARY KEY,
- idTrainingSet SERIAL ,  
- idMovingEntity SERIAL,
- UNIQUE(idTrainingSet, idMovingEntity)
-); 
-
-CREATE TABLE ClassValue 
-( 
- value VARCHAR,  
- idHasInstanceClassValue SERIAL  
+ idTestSet INT,  
+ idMovingEntity INT  
 ); 
 
 ALTER TABLE ClusteringSchema ADD FOREIGN KEY(idMetric) REFERENCES Metric;
